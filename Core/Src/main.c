@@ -52,7 +52,6 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 uint8_t value[6]; //значение, считанное с uart
-uint16_t counter = 1;
 uint8_t dataLength;
 uint8_t onLevel = 18, offLevel= 20, currLevel = 0;
 uint8_t dataSense;
@@ -406,47 +405,37 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart) {
-	if (++counter == 65535) counter = 0;
-	printf("HAL_UART_RxCpltCallback c=%u", counter);
 	if (value[0]) {
 		if (HAL_UART_Receive(&huart1, (value+1), (value[0]+1), 500) == HAL_OK) {
-			printf("0 = %d; 1 = %d; 2 = %d; c = %d;\n", value[0], value[1], value[2], counter);
 			dataSense = dataDecrypt((char*)value);
 			switch (dataSense) {
 				case GET_CURR_LIGHT_LEVEL : {
-					printf("\nsending CURRENT level = %d;\n", currLevel);
 					dataLength = dataCreate((char*)value, CURR_LIGHT_LEVEL, currLevel);
 					break;
 				}
 				case GET_LED_STATE : {
-					printf("\nsending LED STATE = %d;\n", ledState);
 					dataLength = dataCreate((char*)value, CURR_LED_STATE, ledState);
 					break;
 				}
 				case GET_ON_LIGHT_LEVEL : {
-					printf("\nsending ON level = %d;\n", onLevel);
 					dataLength = dataCreate((char*)value, ON_LIGHT_LEVEL, onLevel);
 					break;
 				}
 				case GET_OFF_LIGHT_LEVEL : {
-					printf("\nsending OFF level = %d;\n", offLevel);
 					dataLength = dataCreate((char*)value, OFF_LIGHT_LEVEL, offLevel);
 					break;
 				}
 				case ON_LIGHT_LEVEL : {
 					onLevel = value[2];
-					printf("\ngetting NEW ON level = %d;\n", onLevel);
 					dataLength = dataCreate((char*)value, DATA_OK, 0);
 					break;
 				}
 				case OFF_LIGHT_LEVEL : {
 					offLevel = value[2];
-					printf("\ngetting NEW OFF level = %d;\n", offLevel);
 					dataLength = dataCreate((char*)value, DATA_OK, 0);
 					break;
 				}
 				case BOOTLOADER : {
-					printf("\ngetting BOOTLOADER;\n");
 					HAL_FLASH_Unlock();
 					static uint32_t PAGEError; // = 0xFFFFFFFF;
 					FLASH_EraseInitTypeDef EraseInitStruct;
@@ -457,34 +446,29 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart) {
 						uint32_t bootloaderFlag = BOOTLOADER;
 						if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, BOOTLOADER_FLAG_ADDRESS, bootloaderFlag) == HAL_OK) {
 							HAL_FLASH_Lock();
-							printf("\ngoing BOOTLOADER\n");
 							HAL_DeInit();
 							__disable_irq();
 							HAL_NVIC_SystemReset();
 						} else {
-							printf("\nHAL_FLASH_Program_error\n");
 							dataLength = dataCreate((char*)value, DATA_ERROR, 0);
 						}
 					} else {
-						printf("\nHAL_FLASHEx_Erase_error\n");
 						dataLength = dataCreate((char*)value, DATA_ERROR, 0);
 					}
 					HAL_FLASH_Lock();
 					break;
 				}
 				default : {
-					printf("\ndata_error\n");
 					dataLength = dataCreate((char*)value, DATA_ERROR, 0);
 					break;
 				}
 			}
 			HAL_UART_Transmit(&huart1, value, dataLength, 500);
 		} else {
-			printf("\nHAL_UART_Receive_error\n");
 			dataLength = dataCreate((char*)value, DATA_ERROR, 0);
 		}
-		HAL_UART_Receive_IT(&huart1, value, 1);
-	}
+	} //if (value[0]) {
+	HAL_UART_Receive_IT(&huart1, value, 1);
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
@@ -498,7 +482,6 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
 		ledState = 0;
 	}
-	printf("\ncurrLevel=%u", currLevel);
 }
 
 int _write(int file, char *ptr, int len) {
