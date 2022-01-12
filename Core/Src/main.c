@@ -62,10 +62,10 @@ uint8_t ledState = 0;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_ADC1_Init(void);
+static void MX_TIM1_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
-static void MX_TIM1_Init(void);
-static void MX_ADC1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -105,10 +105,10 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_ADC1_Init();
+  MX_TIM1_Init();
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
-  MX_TIM1_Init();
-  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
   printf("rcc->csr = %lu\n", RCC->CSR);
   HAL_ADCEx_Calibration_Start(&hadc1);
@@ -121,9 +121,9 @@ int main(void)
   HAL_UART_Receive_IT(&huart1, value, 1);
   while (1)
   {
-	    /* USER CODE END WHILE */
+    /* USER CODE END WHILE */
 
-	    /* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
@@ -407,6 +407,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart) {
 	if (++counter == 65535) counter = 0;
+	printf("HAL_UART_RxCpltCallback c=%u", counter);
 	if (value[0]) {
 		if (HAL_UART_Receive(&huart1, (value+1), (value[0]+1), 500) == HAL_OK) {
 			printf("0 = %d; 1 = %d; 2 = %d; c = %d;\n", value[0], value[1], value[2], counter);
@@ -497,6 +498,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
 		ledState = 0;
 	}
+	printf("\ncurrLevel=%u", currLevel);
 }
 
 int _write(int file, char *ptr, int len) {
